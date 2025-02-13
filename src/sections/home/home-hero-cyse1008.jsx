@@ -1,12 +1,14 @@
 import { useState } from "react";
+
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import { CustomComponent } from '../home/custom-component.jsx'
+
+import { CustomComponent } from './custom-component'
 
 export function HomeHeroCYSE1008() {
   const [count, setCount] = useState(0);
   return (
-    <div align="center">
+    <div style={{ textAlign: "center" }}>
       <Box
         component="h1"
         textAlign="center"
@@ -23,7 +25,7 @@ export function HomeHeroCYSE1008() {
       <Button variant="contained" color="success" onClick={() => setCount(count + 1)}>
         Click Me {count}
       </Button>
-      <CustomComponent></CustomComponent>
+      <CustomComponent> </CustomComponent>
     </div>
   );
 }
