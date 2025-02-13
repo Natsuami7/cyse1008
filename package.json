@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "next dev -p 3032",
     "start": "next start -p 3032",
-    "build": "NEXT_PUBLIC_SKIP_ESLINT=true NEXT_PUBLIC_DEBUG=true npx next build",
+    "build": "cross-env NEXT_PUBLIC_SKIP_ESLINT=true NEXT_PUBLIC_DEBUG=true npx next build",
     "lint": "eslint \"src/**/*.{js,jsx,ts,tsx}\"",
     "lint:fix": "eslint --fix \"src/**/*.{js,jsx,ts,tsx}\"",
     "fm:check": "prettier --check \"src/**/*.{js,jsx,ts,tsx}\"",
@@ -125,6 +125,7 @@
     "@types/estree-jsx": "^1.0.5",
     "@types/node": "^22.7.7",
     "@types/react": "^18.3.4",
+    "cross-env": "^7.0.3",
     "esbuild": "^0.24.0",
     "eslint": "^8.57.0",
     "eslint-config-airbnb": "^19.0.4",

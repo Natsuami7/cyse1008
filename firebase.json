@@ -3,20 +3,19 @@
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
   },
- "hosting": {
-   "hosting": {
-    "source": ".next",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-    "frameworksBackend": {
-      "region": "us-central1"
-    },
+  "hosting": {
+    "public": "public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
     "rewrites": [
       {
         "source": "**",
         "destination": "/index.html"
       }
     ]
-  }
   },
   "functions": [
     {
