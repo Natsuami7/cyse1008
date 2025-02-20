@@ -4,6 +4,7 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 
 import { CustomComponent } from './custom-component'
+import { ExtendedEuclideanAlgorithm } from './components/extended-euclidean-algorithm'
 
 export function HomeHeroCYSE1008() {
   const [count, setCount] = useState(0);
@@ -26,6 +27,8 @@ export function HomeHeroCYSE1008() {
         Click Me {count}
       </Button>
       <CustomComponent> </CustomComponent>
+
+      <ExtendedEuclideanAlgorithm> </ExtendedEuclideanAlgorithm>
     </div>
   );
 }
