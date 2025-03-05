@@ -1,7 +1,7 @@
 import { z as zod } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMemo, useState, useEffect, useCallback } from 'react';
+import React, { useMemo, useState, useEffect, useContext, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
@@ -18,6 +18,9 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
+import { CONFIG } from 'src/config-global';
+import ProductContext from 'src/lib/contexts/ProductContext';
+import { uploadImagesToLibrary } from 'src/lib/firebase/storage';
 import {
   _tags,
   PRODUCT_SIZE_OPTIONS,
@@ -27,22 +30,24 @@ import {
 } from 'src/_mock';
 
 import { toast } from 'src/components/snackbar';
-import { Form, Field, schemaHelper } from 'src/components/hook-form';
+import { Form, Field } from 'src/components/hook-form';
+
+import { useAuthContext } from 'src/auth/hooks';
 
 // ----------------------------------------------------------------------
 
 export const NewProductSchema = zod.object({
   name: zod.string().min(1, { message: 'Name is required!' }),
-  description: schemaHelper.editor({ message: { required_error: 'Description is required!' } }),
-  images: schemaHelper.files({ message: { required_error: 'Images is required!' } }),
-  code: zod.string().min(1, { message: 'Product code is required!' }),
-  sku: zod.string().min(1, { message: 'Product sku is required!' }),
-  quantity: zod.number().min(1, { message: 'Quantity is required!' }),
-  colors: zod.string().array().nonempty({ message: 'Choose at least one option!' }),
-  sizes: zod.string().array().nonempty({ message: 'Choose at least one option!' }),
-  tags: zod.string().array().min(2, { message: 'Must have at least 2 items!' }),
-  gender: zod.string().array().nonempty({ message: 'Choose at least one option!' }),
-  price: zod.number().min(1, { message: 'Price should not be $0.00' }),
+  // description: schemaHelper.editor({ message: { required_error: 'Description is required!' } }),
+  // images: schemaHelper.files({ message: { required_error: 'Images is required!' } }),
+  // code: zod.string().min(1, { message: 'Product code is required!' }),
+  // sku: zod.string().min(1, { message: 'Product sku is required!' }),
+  // quantity: zod.number().min(1, { message: 'Quantity is required!' }),
+  // colors: zod.string().array().nonempty({ message: 'Choose at least one option!' }),
+  // sizes: zod.string().array().nonempty({ message: 'Choose at least one option!' }),
+  // tags: zod.string().array().min(2, { message: 'Must have at least 2 items!' }),
+  // gender: zod.string().array().nonempty({ message: 'Choose at least one option!' }),
+  // price: zod.number().min(1, { message: 'Price should not be $0.00' }),
   // Not required
   category: zod.string(),
   priceSale: zod.number(),
@@ -56,6 +61,9 @@ export const NewProductSchema = zod.object({
 
 export function ProductNewEditForm({ currentProduct }) {
   const router = useRouter();
+  const { user } = useAuthContext();
+
+  const { createProduct, updateProduct } = useContext(ProductContext);
 
   const [includeTaxes, setIncludeTaxes] = useState(false);
 
@@ -64,7 +72,9 @@ export function ProductNewEditForm({ currentProduct }) {
       name: currentProduct?.name || '',
       description: currentProduct?.description || '',
       subDescription: currentProduct?.subDescription || '',
-      images: currentProduct?.images || [],
+      images: currentProduct?.images || [
+        `${CONFIG.assetsDir}/assets/images/mock/m-product/product-1.webp`,
+      ],
       //
       code: currentProduct?.code || '',
       sku: currentProduct?.sku || '',
@@ -92,6 +102,8 @@ export function ProductNewEditForm({ currentProduct }) {
     reset,
     watch,
     setValue,
+    getValues,
+    trigger,
     handleSubmit,
     formState: { isSubmitting },
   } = methods;
@@ -105,6 +117,10 @@ export function ProductNewEditForm({ currentProduct }) {
   }, [currentProduct, defaultValues, reset]);
 
   useEffect(() => {
+    methods.register('images', { required: true });
+  }, [methods]);
+
+  useEffect(() => {
     if (includeTaxes) {
       setValue('taxes', 0);
     } else {
@@ -114,19 +130,65 @@ export function ProductNewEditForm({ currentProduct }) {
 
   const onSubmit = handleSubmit(async (data) => {
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await trigger('images'); // Ensure images field is up-to-date
+      const images = getValues('images');
+
+      if (!Array.isArray(images) || images.length === 0) {
+        console.error('Error: No images found!');
+        toast.error('Please upload at least one image.');
+        return;
+      }
+
+      const productData = {
+        ...data,
+        images,
+      };
+
+      if (currentProduct) {
+        // 🛠 If editing, update existing product
+        await updateProduct(currentProduct.id, productData);
+        toast.success('Update successful!');
+      } else {
+        // 🆕 If creating, add a new product
+        await createProduct(productData);
+        toast.success('Product created!');
+      }
       reset();
       toast.success(currentProduct ? 'Update success!' : 'Create success!');
       router.push(paths.dashboard.product.root);
-      console.info('DATA', data);
     } catch (error) {
-      console.error(error);
+      console.error('Error creating product:', error);
+      toast.error('Something went wrong, please try again!');
     }
   });
 
+  const handleOnUpload = useCallback(
+    async (inputFiles) => {
+      try {
+        const uploadedUrls = await uploadImagesToLibrary(user.id, inputFiles);
+        console.log('Uploaded URLs:', uploadedUrls);
+
+        setValue(
+          'images',
+          (prevImages) => {
+            const prev = typeof prevImages === 'function' ? prevImages() : prevImages || [];
+            const uniqueImages = Array.from(new Set([...prev, ...uploadedUrls]));
+            console.log('Updated images in form:', uniqueImages);
+            return uniqueImages;
+          },
+          { shouldValidate: true, shouldDirty: true }
+        );
+        await trigger('images');
+      } catch (error) {
+        console.error('Error uploading images:', error);
+      }
+    },
+    [user.id, setValue, trigger]
+  );
+
   const handleRemoveFile = useCallback(
-    (inputFile) => {
-      const filtered = values.images && values.images?.filter((file) => file !== inputFile);
+    (fileUrl) => {
+      const filtered = values.images && values.images?.filter((url) => url !== fileUrl);
       setValue('images', filtered);
     },
     [setValue, values.images]
@@ -162,10 +224,10 @@ export function ProductNewEditForm({ currentProduct }) {
             multiple
             thumbnail
             name="images"
-            maxSize={3145728}
+            // maxSize={3145728}
             onRemove={handleRemoveFile}
             onRemoveAll={handleRemoveAllFiles}
-            onUpload={() => console.info('ON UPLOAD')}
+            onUpload={handleOnUpload}
           />
         </Stack>
       </Stack>

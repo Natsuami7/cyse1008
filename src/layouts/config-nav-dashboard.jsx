@@ -48,6 +48,7 @@ export const navData = [
   {
     subheader: 'Overview',
     items: [
+      { title: 'Encryption', path: paths.dashboard.general.encryption, icon: ICONS.analytics },
       { title: 'App', path: paths.dashboard.root, icon: ICONS.dashboard },
       { title: 'Ecommerce', path: paths.dashboard.general.ecommerce, icon: ICONS.ecommerce },
       { title: 'Analytics', path: paths.dashboard.general.analytics, icon: ICONS.analytics },
@@ -62,6 +63,7 @@ export const navData = [
    */
   {
     subheader: 'Management',
+    roles: ['admin'],
     items: [
       {
         title: 'User',
@@ -171,7 +173,7 @@ export const navData = [
         title: 'Permission',
         path: paths.dashboard.permission,
         icon: ICONS.lock,
-        roles: ['admin', 'manager'],
+        roles: ['admin', ],
         caption: 'Only admin can see this item',
       },
       {
