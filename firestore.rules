@@ -15,5 +15,9 @@ service cloud.firestore {
     match /{document=**} {
       allow read, write: if request.time < timestamp.date(2025, 5, 30);
     }
+
+    match /products/{products}{
+      allow read, write: if false;
+    }
   }
 }
